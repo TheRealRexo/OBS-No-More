@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "obsnomore",
+  "version": "${version}",
+  "name": "OBS No More",
+  "description": "An In-game OBS Studio replacement: stream to multiple RTMP servers and record with ffmpeg, with your favorite scene editor and sources, no external OBS needed.",
+  "authors": [
+    "TheRealRexo"
+  ],
+  "contact": {
+    "homepage": "https://github.com/TheRealRexo/OBS-No-More",
+    "sources": "https://github.com/TheRealRexo/OBS-No-More"
+  },
+  "license": "GPL-3.0-only",
+  "icon": "assets/obsnomore/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": [
+      "com.obsnomore.ObsNoMore"
+    ],
+    "client": [
+      "com.obsnomore.ObsNoMore"
+    ]
+  },
+  "mixins": [
+    "obsnomore.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "java": ">=17 <=21",
+    "minecraft": "1.6.4"
+  }
+}

@@ -1,0 +1,76 @@
+plugins {
+	id "net.fabricmc.fabric-loom-remap" version "${loom_version}"
+	id "legacy-looming" version "${loom_version}"
+	id "maven-publish"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+repositories {
+}
+
+loom {
+	// 1.6.4 is fetched via legacy meta automatically by legacy-looming.
+}
+
+legacyLooming {
+	// Default (generation 1, LF intermediaries) is correct for 1.6.4.
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	mappings(legacy.yarn(project.minecraft_version, project.yarn_build))
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+
+	// Legacy Fabric API (includes events, keys, resources). Available for 1.6.4.
+	modImplementation "net.legacyfabric.legacy-fabric-api:legacy-fabric-api:${project.fabric_version}"
+}
+
+processResources {
+	inputs.property "version", project.version
+
+	filesMatching("fabric.mod.json") {
+		expand "version": inputs.properties.version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.encoding = "UTF-8"
+	// Bytecode level 8 so the jar runs on the pack's JDK 17/21 runtime.
+	// Works whether Gradle itself runs on JDK 17 or 21.
+	it.options.release = 8
+}
+
+java {
+	withSourcesJar()
+
+	// Compile with a real JDK (Gradle itself may run on a bare JRE 21,
+	// which loom 1.16 requires, while javac comes from JDK 17).
+	toolchain {
+		languageVersion.set(JavaLanguageVersion.of(17))
+	}
+}
+
+jar {
+	inputs.property "archivesName", project.base.archivesName
+
+	from("LICENSE") {
+		rename { "${it}_${inputs.properties.archivesName}" }
+	}
+}
+
+publishing {
+	publications {
+		create("mavenJava", MavenPublication) {
+			artifactId = project.archives_base_name
+			from components.java
+		}
+	}
+	repositories {
+	}
+}
