@@ -153,10 +153,53 @@ public final class Webshotter {
     public static File currentShot(OverlayConfig.Source s) {
         try {
             File f = shotFile(s);
-            if (f.isFile() && f.length() > 1024) return f;
+            if (!f.isFile() || f.length() <= 1024) return null;
+            if (isCachedBlank(f)) {
+                // Stale white from before the blank-guard (or 5-blank
+                // acceptance): never serve white to the preview — delete
+                // it so the next good capture starts clean and the text
+                // fallback shows meanwhile.
+                try {
+                    f.delete();
+                } catch (Throwable ignored) {
+                }
+                com.obsnomore.ObsLog.info("webshot dropped blank cache: "
+                        + f.getName());
+                return null;
+            }
+            return f;
         } catch (Throwable ignored) {
         }
         return null;
+    }
+
+    private static final Map<String, long[]> BLANK_SEEN = new HashMap<String, long[]>();
+    private static final Map<String, Boolean> BLANK_RES = new HashMap<String, Boolean>();
+
+    /**
+     * Blank verdict for a cache file, re-evaluated only when its mtime
+     * changes (decoding every render frame would be far too slow).
+     */
+    static boolean isCachedBlank(File f) {
+        String path;
+        long mtime;
+        try {
+            path = f.getAbsolutePath();
+            mtime = f.lastModified();
+        } catch (Throwable t) {
+            return true;
+        }
+        synchronized (BLANK_SEEN) {
+            long[] seen = BLANK_SEEN.get(path);
+            Boolean res = BLANK_RES.get(path);
+            if (seen != null && res != null && seen[0] == mtime) return res;
+        }
+        boolean blank = isBlankShot(f);
+        synchronized (BLANK_SEEN) {
+            BLANK_SEEN.put(path, new long[]{mtime});
+            BLANK_RES.put(path, blank);
+        }
+        return blank;
     }
 
     /** Kicks a background refresh when the shot is missing or stale. */
@@ -195,7 +238,9 @@ public final class Webshotter {
                     cmd.add("--hide-scrollbars");
                     // Let JS widgets/feeds finish loading before the shot:
                     // without this the capture is a blank white page.
-                    cmd.add("--virtual-time-budget=10000");
+                    // 15s budget: network-fed widgets (heart-rate, chat)
+                    // often need several seconds after DOM load.
+                    cmd.add("--virtual-time-budget=15000");
                     cmd.add("--run-all-compositor-stages-before-draw");
                     cmd.add("--window-size=" + SHOT_W + "," + SHOT_H);
                     cmd.add("--screenshot=" + tmp.getAbsolutePath());
