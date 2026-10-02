@@ -79,8 +79,17 @@ public class Session {
         say(status);
     }
 
-    public boolean isRunning() {
+    /** ffmpeg stdin, for piped inputs (GL frame pipe). Null when stopped. */
+    public synchronized java.io.OutputStream stdin() {
         try {
+            if (process == null) return null;
+            return process.getOutputStream();
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    public boolean isRunning() {        try {
             if (!running || process == null) return false;
             process.exitValue();
             running = false;

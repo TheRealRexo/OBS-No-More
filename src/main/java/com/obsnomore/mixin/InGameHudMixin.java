@@ -23,5 +23,13 @@ public abstract class InGameHudMixin {
         } catch (Throwable t) {
             // Never crash the HUD because of an overlay.
         }
+        // Wayland frame pipe (no-op unless a session attached it): reads
+        // after the HUD so 1-POV frames carry overlays baked in, while
+        // 2-POV frames stay clean via cleanLocal().
+        try {
+            com.obsnomore.stream.PipeFeed.offer();
+        } catch (Throwable t) {
+            // Never crash the HUD because of the recorder.
+        }
     }
 }

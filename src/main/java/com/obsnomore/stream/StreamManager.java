@@ -115,9 +115,11 @@ public final class StreamManager {
 
     /**
      * Game-window capture per OS.
-     * Windows: gdigrab by window title. Linux: x11grab over the live window
-     * rect (works on X11 and XWayland). macOS: avfoundation screen capture
-     * cropped to the window rect when it can be resolved.
+     * Windows: gdigrab by window title. Linux X11: x11grab over the live
+     * window rect. Linux Wayland (native or XWayland): x11grab reads BLACK
+     * there, so frames come from the in-process GL pipe instead. macOS:
+     * avfoundation screen capture cropped to the window rect when it can
+     * be resolved.
      *
      * @return true when window args were appended.
      */
@@ -158,6 +160,12 @@ public final class StreamManager {
                     return true;
                 }
                 default: {
+                    // Wayland (native or XWayland): x11grab reads BLACK —
+                    // the compositor never composites into the X root
+                    // pixmap — so frames come from the in-process GL pipe.
+                    if (DeviceDetect.isWayland()) {
+                        return pipeCapture(a, cfg, c, fps);
+                    }
                     // Pure Wayland without X has no xdotool/x11grab target;
                     // fail so the caller falls back to the manual region.
                     if (DeviceDetect.isWaylandWithoutX()) return false;
@@ -172,6 +180,55 @@ public final class StreamManager {
                 }
             }
         } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** GL-pipe session dims (Wayland). Zero when the pipe is not in use. */
+    static int pipeW;
+    static int pipeH;
+
+    static boolean pipeActive() {
+        return pipeW > 0 && pipeH > 0;
+    }
+
+    /**
+     * Wayland game video: ffmpeg reads rgb24 frames from stdin, fed by
+     * {@link PipeFeed} (render-thread GL readback). Input 0 stays the game
+     * frames, so audio indices and 2-POV filter graphs work unchanged —
+     * the graph base size is the pipe frame size (see callers).
+     *
+     * @return true when pipe args were appended.
+     */
+    static boolean pipeCapture(List<String> a, OverlayConfig cfg,
+                               OverlayConfig.Capture c, int fps) {
+        try {
+            int[] size = PipeFeed.displaySize();
+            int w = size[0];
+            int h = size[1];
+            if (w < 16 || h < 16) {
+                pipeW = 0;
+                pipeH = 0;
+                return false;
+            }
+            pipeW = w;
+            pipeH = h;
+            a.add("-f");
+            a.add("rawvideo");
+            a.add("-pix_fmt");
+            a.add("rgb24");
+            a.add("-s");
+            a.add(w + "x" + h);
+            a.add("-framerate");
+            a.add(String.valueOf(fps));
+            a.add("-i");
+            a.add("-");
+            com.obsnomore.ObsLog.info("[OBSNoMore] Wayland GL pipe capture ("
+                    + w + "x" + h + "@" + fps + ")");
+            return true;
+        } catch (Throwable t) {
+            pipeW = 0;
+            pipeH = 0;
             return false;
         }
     }
@@ -280,6 +337,8 @@ public final class StreamManager {
         }
         Presets.Quality q = Presets.quality(cfg.streaming.quality);
         int fps = cfg.streaming.fps > 0 ? cfg.streaming.fps : q.fps;
+        pipeW = 0;
+        pipeH = 0;
         List<String> a = new ArrayList<String>();
         a.add(ffmpeg);
         a.add("-hide_banner");
@@ -296,7 +355,9 @@ public final class StreamManager {
         FilterGraph.Graph g = null;
         boolean twoPov = "2-POV".equals(cfg.pov_mode);
         if (twoPov) {
-            g = FilterGraph.build(cfg, cfg.capture.w, cfg.capture.h, q.w, q.h, videoFilters);
+                int baseW = pipeActive() ? pipeW : cfg.capture.w;
+                int baseH = pipeActive() ? pipeH : cfg.capture.h;
+                g = FilterGraph.build(cfg, baseW, baseH, q.w, q.h, videoFilters);
             a.addAll(g.extraInputs);
             dumpSceneText(cfg);
         }
@@ -337,10 +398,12 @@ public final class StreamManager {
             return s;
         }
         streamStartedAt = System.currentTimeMillis();
+        if (pipeActive()) PipeFeed.attach(stream, pipeW, pipeH, fps);
         return "streaming to " + urls.size() + " server(s)" + audioNote;
     }
 
     public static synchronized void stopStream() {
+        PipeFeed.detach();
         if (stream != null) {
             stream.stop();
             stream = null;
@@ -375,6 +438,8 @@ public final class StreamManager {
         }
         Presets.Quality q = Presets.quality(cfg.recording.quality);
         int fps = cfg.streaming.fps > 0 ? cfg.streaming.fps : q.fps;
+        pipeW = 0;
+        pipeH = 0;
         File out = recordFile(cfg, recordPart);
         if (out == null) {
             recordStatus = "bad record path";
@@ -396,7 +461,9 @@ public final class StreamManager {
         boolean twoPov = "2-POV".equals(cfg.pov_mode);
         FilterGraph.Graph g = null;
         if (twoPov) {
-            g = FilterGraph.build(cfg, cfg.capture.w, cfg.capture.h, q.w, q.h, videoFilters);
+                int baseW = pipeActive() ? pipeW : cfg.capture.w;
+                int baseH = pipeActive() ? pipeH : cfg.capture.h;
+                g = FilterGraph.build(cfg, baseW, baseH, q.w, q.h, videoFilters);
             a.addAll(g.extraInputs);
             dumpSceneText(cfg);
         }
@@ -440,10 +507,12 @@ public final class StreamManager {
             return s;
         }
         recordStartedAt = System.currentTimeMillis();
+        if (pipeActive()) PipeFeed.attach(record, pipeW, pipeH, fps);
         return "recording " + out.getName() + audioNote;
     }
 
     public static synchronized void stopRecord() {
+        PipeFeed.detach();
         if (record != null) {
             record.stop();
             record = null;

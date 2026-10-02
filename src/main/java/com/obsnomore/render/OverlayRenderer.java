@@ -160,9 +160,8 @@ public final class OverlayRenderer {
         fill(x, y, x + w, y + h, 0x90000000);
         drawBorder(x, y, x + w, y + h, 0x60FFFFFF);
 
-        String title = (s.name == null || s.name.isEmpty()) ? "Browser" : s.name;
-        tr.draw(title, x + 5, y + 3, 0xFFFFFFFF);
-
+        // No title bar: source names are for the editor list only. Viewers
+        // must never see labels like "Heart Rate" baked over the content.
         // Rendered page screenshot when a browser is available, refreshed
         // in the background; plain text lines otherwise.
         boolean shotDrawn = false;
@@ -174,7 +173,7 @@ public final class OverlayRenderer {
                 if (id != null) {
                     enableBlend();
                     try {
-                        PreviewTextures.drawIcon(id, x + 2, y + 14, w - 4, h - 16);
+                        PreviewTextures.drawIcon(id, x + 2, y + 2, w - 4, h - 4);
                         shotDrawn = true;
                     } finally {
                         disableBlend();
@@ -191,13 +190,12 @@ public final class OverlayRenderer {
                 && com.obsnomore.stream.Webshotter.locateBrowser().isEmpty()) {
             String need = "Need Chromium: " + com.obsnomore.stream.InstallGuide.browserInstall();
             need = trimToFit(tr, need, x + 5, w - 10);
-            tr.draw(need, x + 5, y + 5 + Math.round(11 * scy),
-                    0xFFFFAA00);
+            tr.draw(need, x + 5, y + 4, 0xFFFFAA00);
         }
         int lineH = Math.round(BROWSER_LINE_H * scy);
         int maxLines = Math.max(1, Math.min(25, s.max_messages));
         int start = Math.max(0, msgs.size() - maxLines);
-        int yy = y + 5 + Math.round(11 * scy);
+        int yy = y + 4;
         for (int i = start; i < msgs.size(); i++) {
             String line = trimToFit(tr, msgs.get(i), x + 5, w - 10);
             tr.draw(line, x + 5, yy, 0xFFFFFFFF);

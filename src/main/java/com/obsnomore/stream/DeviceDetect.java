@@ -151,11 +151,28 @@ public final class DeviceDetect {
     }
 
     /**
+     * True on any Linux Wayland session (native or XWayland). x11grab reads
+     * BLACK there — the compositor never composites into the X root pixmap
+     * — so game video must come from the in-process GL pipe instead.
+     * Pure env check, no xdotool involved.
+     */
+    public static boolean isWayland() {
+        if (FFmpeg.os() != FFmpeg.Os.LINUX) return false;
+        try {
+            String session = System.getenv("XDG_SESSION_TYPE");
+            if (session != null && session.toLowerCase().contains("wayland")) return true;
+            String wd = System.getenv("WAYLAND_DISPLAY");
+            return wd != null && !wd.isEmpty();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /**
      * True on a Wayland session with no usable X (no xdotool target):
      * x11grab has nothing to grab there.
      */
-    public static boolean isWaylandWithoutX() {
-        if (FFmpeg.os() != FFmpeg.Os.LINUX) return false;
+    public static boolean isWaylandWithoutX() {        if (FFmpeg.os() != FFmpeg.Os.LINUX) return false;
         try {
             String session = System.getenv("XDG_SESSION_TYPE");
             String wayland = System.getenv("WAYLAND_DISPLAY");

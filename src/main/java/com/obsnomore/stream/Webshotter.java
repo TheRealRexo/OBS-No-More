@@ -34,10 +34,15 @@ public final class Webshotter {
     private static final class Shot {
         File file;
         long fetchedAt;
+        long retryAt;
+        int blanks;
         boolean inFlight;
     }
 
     private static final Map<String, Shot> SHOTS = new HashMap<String, Shot>();
+
+    /** Retry delay after a blank capture (a good shot may just need JS time). */
+    public static final long BLANK_RETRY_MS = 3000L;
 
     /** Chromium-family binary path, or "" when none is installed. Cached. */
     public static synchronized String locateBrowser() {
@@ -169,7 +174,8 @@ public final class Webshotter {
                 e = new Shot();
                 SHOTS.put(key, e);
             }
-            stale = !e.inFlight && System.currentTimeMillis() - e.fetchedAt > REFRESH_MS;
+            long now = System.currentTimeMillis();
+            stale = !e.inFlight && now - e.fetchedAt > REFRESH_MS && now >= e.retryAt;
             if (stale) e.inFlight = true;
         }
         if (!stale) return;
@@ -209,27 +215,55 @@ public final class Webshotter {
                     }
                     if (tmp.isFile() && tmp.length() > 1024) {
                         long shotBytes = tmp.length();
-                        try {
-                            if (out.isFile()) out.delete();
-                        } catch (Throwable ignored) {
-                        }
-                        if (tmp.renameTo(out)) {
-                            synchronized (SHOTS) {
-                                Shot e = SHOTS.get(key);
-                                if (e != null) {
-                                    e.file = out;
-                                    e.fetchedAt = System.currentTimeMillis();
-                                }
+                        boolean blank = isBlankShot(tmp);
+                        synchronized (SHOTS) {
+                            Shot e = SHOTS.get(key);
+                            // A truly solid-color page would look blank
+                            // forever: accept it after a few tries instead
+                            // of re-spawning chrome every 3s indefinitely.
+                            if (e != null) {
+                                if (blank) e.blanks++;
+                                else e.blanks = 0;
+                                if (e.blanks >= 5) blank = false;
                             }
-                            com.obsnomore.ObsLog.info("webshot ok (" + shotBytes
-                                    + "B, exit " + exit + "): " + url);
-                        } else {
+                        }
+                        if (blank) {
+                            // Blank white capture (page still loading): keep
+                            // any good shot, retry soon instead of poisoning
+                            // the cache with white for 15s.
                             try {
                                 tmp.delete();
                             } catch (Throwable ignored) {
                             }
-                            com.obsnomore.ObsLog.info("webshot rename failed (exit "
-                                    + exit + "): " + url);
+                            com.obsnomore.ObsLog.info("webshot blank, retry soon: " + url);
+                            synchronized (SHOTS) {
+                                Shot e = SHOTS.get(key);
+                                if (e != null) e.retryAt = System.currentTimeMillis()
+                                        + BLANK_RETRY_MS;
+                            }
+                        } else {
+                            try {
+                                if (out.isFile()) out.delete();
+                            } catch (Throwable ignored) {
+                            }
+                            if (tmp.renameTo(out)) {
+                                synchronized (SHOTS) {
+                                    Shot e = SHOTS.get(key);
+                                    if (e != null) {
+                                        e.file = out;
+                                        e.fetchedAt = System.currentTimeMillis();
+                                    }
+                                }
+                                com.obsnomore.ObsLog.info("webshot ok (" + shotBytes
+                                        + "B, exit " + exit + "): " + url);
+                            } else {
+                                try {
+                                    tmp.delete();
+                                } catch (Throwable ignored) {
+                                }
+                                com.obsnomore.ObsLog.info("webshot rename failed (exit "
+                                        + exit + "): " + url);
+                            }
                         }
                     } else {
                         com.obsnomore.ObsLog.info("webshot no shot (done=" + done
@@ -246,5 +280,41 @@ public final class Webshotter {
         }, "OBSNoMore-webshot");
         t.setDaemon(true);
         t.start();
+    }
+
+    /**
+     * True when a screenshot is (near-)uniform — a still-loading blank
+     * page. Compares quantized colors (5 bits/channel): a blank page is
+     * one bucket, while any rendered widget adds text/edges/AA shades.
+     * A genuinely solid-color page would trip this too, so callers cap
+     * consecutive blanks and eventually accept the shot.
+     */
+    static boolean isBlankShot(File png) {
+        try {
+            java.awt.image.BufferedImage img =
+                    javax.imageio.ImageIO.read(png);
+            if (img == null) return true;
+            int w = img.getWidth();
+            int h = img.getHeight();
+            if (w < 8 || h < 8) return true;
+            int step = Math.max(1, (w * h) / 12000);
+            java.util.HashMap<Integer, Integer> buckets =
+                    new java.util.HashMap<Integer, Integer>();
+            int total = 0;
+            int top = 0;
+            for (int i = 0; i < w * h; i += step) {
+                int rgb = img.getRGB(i % w, i / w);
+                int key = ((rgb >> 19) & 0x1F) << 10
+                        | ((rgb >> 11) & 0x1F) << 5
+                        | ((rgb >> 3) & 0x1F);
+                int n = buckets.containsKey(key) ? buckets.get(key) + 1 : 1;
+                buckets.put(key, n);
+                if (n > top) top = n;
+                total++;
+            }
+            return total > 0 && top * 1000 / total >= 995;
+        } catch (Throwable t) {
+            return true;
+        }
     }
 }
