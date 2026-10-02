@@ -44,6 +44,11 @@ public final class Webshotter {
         if (probed) return browserBin;
         probed = true;
         browserBin = probe();
+        try {
+            com.obsnomore.ObsLog.info("webshot browser probe: "
+                    + (browserBin.isEmpty() ? "(none found)" : browserBin));
+        } catch (Throwable ignored) {
+        }
         return browserBin;
     }
 
@@ -182,15 +187,20 @@ public final class Webshotter {
                     cmd.add("--disable-gpu");
                     cmd.add("--no-sandbox");
                     cmd.add("--hide-scrollbars");
+                    // Let JS widgets/feeds finish loading before the shot:
+                    // without this the capture is a blank white page.
+                    cmd.add("--virtual-time-budget=10000");
+                    cmd.add("--run-all-compositor-stages-before-draw");
                     cmd.add("--window-size=" + SHOT_W + "," + SHOT_H);
                     cmd.add("--screenshot=" + tmp.getAbsolutePath());
                     cmd.add(url);
                     Process p = new ProcessBuilder(cmd).start();
                     boolean done = false;
                     try {
-                        done = p.waitFor(25, java.util.concurrent.TimeUnit.SECONDS);
+                        done = p.waitFor(40, java.util.concurrent.TimeUnit.SECONDS);
                     } catch (InterruptedException ignored) {
                     }
+                    int exit = done ? p.exitValue() : -1;
                     if (!done) {
                         try {
                             p.destroy();
@@ -198,6 +208,7 @@ public final class Webshotter {
                         }
                     }
                     if (tmp.isFile() && tmp.length() > 1024) {
+                        long shotBytes = tmp.length();
                         try {
                             if (out.isFile()) out.delete();
                         } catch (Throwable ignored) {
@@ -210,12 +221,19 @@ public final class Webshotter {
                                     e.fetchedAt = System.currentTimeMillis();
                                 }
                             }
+                            com.obsnomore.ObsLog.info("webshot ok (" + shotBytes
+                                    + "B, exit " + exit + "): " + url);
                         } else {
                             try {
                                 tmp.delete();
                             } catch (Throwable ignored) {
                             }
+                            com.obsnomore.ObsLog.info("webshot rename failed (exit "
+                                    + exit + "): " + url);
                         }
+                    } else {
+                        com.obsnomore.ObsLog.info("webshot no shot (done=" + done
+                                + " exit=" + exit + "): " + url);
                     }
                 } catch (Throwable ignored) {
                 } finally {

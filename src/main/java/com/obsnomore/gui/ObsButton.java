@@ -72,9 +72,13 @@ public class ObsButton extends ButtonWidget {
             } finally {
                 com.obsnomore.render.OverlayRenderer.disableBlend();
             }
-            // Procedural glyph first: always visible, even when the icon
-            // texture is unresolvable (Legacy loader / software stacks).
-            if (client != null && client.textRenderer != null) {
+            Identifier icon = PreviewTextures.getIcon();
+            if (icon != null) {
+                PreviewTextures.drawIcon(icon, x + 2, y + 2, 16, 16);
+            } else if (client != null && client.textRenderer != null) {
+                // Procedural fallback only: the text sits where the icon
+                // goes, so it must not paint when the icon is up (the "S"
+                // of "OBS" would peek out from behind the art).
                 com.obsnomore.render.OverlayRenderer.enableBlend();
                 try {
                     com.obsnomore.render.OverlayRenderer.fill(x + 7, y + 2, x + 13, y + 8, 0xFFFF3B30);
@@ -83,10 +87,6 @@ public class ObsButton extends ButtonWidget {
                     com.obsnomore.render.OverlayRenderer.disableBlend();
                 }
                 client.textRenderer.draw("OBS", x + 3, y + 10, 0xFFFFFFFF);
-            }
-            Identifier icon = PreviewTextures.getIcon();
-            if (icon != null) {
-                PreviewTextures.drawIcon(icon, x + 2, y + 2, 16, 16);
             }
         } finally {
             GL11.glMatrixMode(GL11.GL_PROJECTION);

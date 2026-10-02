@@ -56,7 +56,7 @@ browser conversion) run on load and never touch your choices twice.
 
 ## Editor & setup
 
-- Pause/main menus get an OBS button (bottom-right) → `StreamOverlayEditorScreen`,
+- Pause/main menus get an OBS button (bottom-left) → `StreamOverlayEditorScreen`,
   laid out like OBS Studio: top menu bar, central preview canvas, bottom dock
   strip (**Scenes** | **Sources** | **Audio Mixer** | **Scene Transitions** |
   **Controls**), status bar with LIVE/REC state, scene, fps and bitrate.
