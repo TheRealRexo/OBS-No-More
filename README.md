@@ -6,7 +6,7 @@
 > record with ffmpeg, with your favorite scene editor and sources, no
 > external OBS needed.
 
-Client-side mod for **Minecraft 1.6.4** (Legacy Fabric) by **TheRealRexo**.
+Client-side mod for **Minecraft 1.6.4->1.13.2** (Legacy Fabric) by **TheRealRexo**.
 Stream to Twitch/YouTube/Kick (or any RTMP) and record MP4/MKV/MOV/FLV
 without leaving the game — scenes, sources, hotkeys and stream health
 checks included.
