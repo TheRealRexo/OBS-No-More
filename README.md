@@ -1,4 +1,4 @@
-# OBS No More — Minecraft 1.6.4 (Legacy Fabric)
+# OBS No More — Minecraft 1.6.4-1.13.2 (Legacy Fabric)
 
 [![build](https://github.com/TheRealRexo/OBS-No-More/actions/workflows/build.yml/badge.svg)](https://github.com/TheRealRexo/OBS-No-More/actions/workflows/build.yml)
 
