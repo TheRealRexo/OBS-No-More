@@ -32,6 +32,9 @@ name, X/Y position, scale, and the content field (text / path / device /
 URL), with Save & Close persisting to disk. Also editable inline via the
 small field under the menu bar (Enter saves).
 
+**Reload** (info bar): re-captures the selected browser source's page
+immediately instead of waiting for the ~15 s auto-refresh.
+
 ## Transforms (canvas)
 
 - Drag body: move. Arrow keys: nudge. **Del**: remove.
@@ -45,7 +48,8 @@ small field under the menu bar (Enter saves).
 
 ## Docks
 
-- **Scenes**: select / + / −, cycle button when more than 3 exist.
+- **Scenes**: select / + / −, **Rename** (type the new name in the field
+  under the menu bar, Enter saves), cycle button when more than 3 exist.
 - **Audio Mixer**: desktop + mic mute toggles, gain −/+, level slider,
   totals readout.
 - **Scene Transitions**: Cut/Fade + duration, Go to preview it.

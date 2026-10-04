@@ -6,6 +6,7 @@ import com.obsnomore.render.OverlayRenderer;
 import com.obsnomore.render.PreviewTextures;
 import com.obsnomore.stream.CameraManager;
 import com.obsnomore.stream.StreamManager;
+import com.obsnomore.stream.Webshotter;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -86,6 +87,7 @@ public class StreamOverlayEditorScreen extends Screen {
     private TextFieldWidget propScaleField;
     private TextFieldWidget propContentField;
     private TextFieldWidget propField;
+    private boolean renamingScene;
     private String settingsError = "";
 
     public StreamOverlayEditorScreen(Screen parent) {
@@ -215,6 +217,10 @@ public class StreamOverlayEditorScreen extends Screen {
             buttons.add(new ButtonWidget(65, sx + 24, sby, 20, 12, "-"));
             buttons.add(new ButtonWidget(3, sx + 46, sby, sw - 48, 12, scenes.size() > 1 ? ((cfg.active_scene + 1) + "/" + scenes.size()) : "1/1"));
         }
+        int sby2 = sby + 13;
+        if (sby2 + 12 <= dy + dh) {
+            buttons.add(new ButtonWidget(66, sx + 2, sby2, sw - 4, 12, "Rename"));
+        }
         // ---- Sources dock ----
         List<OverlayConfig.Source> sources = cfg.activeScene().sources;
         int qy = dy + 12;
@@ -282,7 +288,14 @@ public class StreamOverlayEditorScreen extends Screen {
             buttons.add(new ButtonWidget(1, bxx + half + 2, byy + 39, bww - half - 2, 11, "Exit"));
         }
         // Property field floats just under the menu bar (over the canvas).
-        if (needsPropField(selected)) {
+        if (renamingScene) {
+            OverlayConfig.Scene asc = cfg.activeScene();
+            int fw = Math.min(260, width - 20);
+            propField = new TextFieldWidget(textRenderer, 10, TOP_H + 3, fw, 16);
+            propField.setMaxLength(64);
+            propField.setText(asc == null || asc.name == null ? "" : asc.name);
+            propField.setFocused(true);
+        } else if (needsPropField(selected)) {
             int fw = Math.min(260, width - 20);
             propField = new TextFieldWidget(textRenderer, 10, TOP_H + 3, fw, 16);
             propField.setMaxLength(256);
@@ -292,6 +305,7 @@ public class StreamOverlayEditorScreen extends Screen {
         }
         // Info-bar buttons (right side of the "No source selected" strip).
         int infoY = dy - 18;
+        buttons.add(new ButtonWidget(74, width - 172, infoY + 2, 52, 12, "Reload"));
         buttons.add(new ButtonWidget(72, width - 118, infoY + 2, 58, 12, "Properties"));
         buttons.add(new ButtonWidget(73, width - 58, infoY + 2, 52, 12, "Filters"));
     }
@@ -430,7 +444,18 @@ public class StreamOverlayEditorScreen extends Screen {
     }
 
     private void applyPropField() {
-        if (propField == null || selected == null) return;
+        if (propField == null) return;
+        if (renamingScene) {
+            renamingScene = false;
+            String v = propField.getText().trim();
+            if (!v.isEmpty()) {
+                cfg.activeScene().name = v;
+                cfg.save();
+            }
+            queueRefresh();
+            return;
+        }
+        if (selected == null) return;
         String v = propField.getText();
         String t = selected.type == null ? "" : selected.type;
         if (t.equals("text")) selected.text = v;
@@ -555,6 +580,11 @@ public class StreamOverlayEditorScreen extends Screen {
             queueRefresh();
             return;
         }
+        if (button.id == 66) {
+            renamingScene = true;
+            queueRefresh();
+            return;
+        }
         if (button.id == 64) {
             OverlayConfig.Scene scene = new OverlayConfig.Scene();
             scene.name = "Scene " + (cfg.scenes.size() + 1);
@@ -642,6 +672,16 @@ public class StreamOverlayEditorScreen extends Screen {
                 cfg.save();
                 queueRefresh();
             }
+            return;
+        }
+        if (button.id == 74) {
+            if (selected != null && "browser".equals(selected.type)) {
+                Webshotter.reloadNow(selected);
+                com.obsnomore.ObsNoMore.setAction("Reloading page...");
+            } else {
+                com.obsnomore.ObsNoMore.setAction("Select a browser source first, then Reload");
+            }
+            queueRefresh();
             return;
         }
         if (button.id == 90) {
@@ -1442,7 +1482,7 @@ public class StreamOverlayEditorScreen extends Screen {
             OverlayRenderer.disableBlend();
         }
         String hint = selectionLine();
-        int maxHint = width - 130;
+        int maxHint = width - 184;
         if (maxHint > 40 && textRenderer.getStringWidth(hint) > maxHint) {
             hint = textRenderer.trimToWidth(hint, maxHint);
         }

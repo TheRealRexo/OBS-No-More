@@ -202,6 +202,28 @@ public final class Webshotter {
         return blank;
     }
 
+    /** Forces an immediate re-capture (manual Reload button). */
+    public static void reloadNow(final OverlayConfig.Source s) {
+        if (s == null || s.url == null || s.url.trim().isEmpty()) return;
+        final String url = s.url.trim();
+        if (!url.startsWith("http://") && !url.startsWith("https://")
+                && !url.startsWith("file://")) return;
+        if (locateBrowser().isEmpty()) return;
+        synchronized (SHOTS) {
+            Shot e = SHOTS.get(url);
+            if (e == null) {
+                e = new Shot();
+                SHOTS.put(url, e);
+            }
+            e.fetchedAt = 0;
+            e.retryAt = 0;
+            e.blanks = 0;
+            e.inFlight = false;
+        }
+        com.obsnomore.ObsLog.info("webshot manual reload: " + url);
+        refresh(s);
+    }
+
     /** Kicks a background refresh when the shot is missing or stale. */
     public static void refresh(final OverlayConfig.Source s) {
         if (s == null || s.url == null || s.url.trim().isEmpty()) return;
