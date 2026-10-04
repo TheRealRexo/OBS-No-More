@@ -109,9 +109,9 @@ reliably resolve mod-jar assets on Legacy Fabric):
 
 ## Verified working features
 
-- Boots with a full modded pack, no mixin conflicts; config auto-creates and
+- Boots with a full modded pack (Better than wolves and nightmare mode), no mixin conflicts; config auto-creates and
   the legacy flat config migrates into scene "Main" once.
-- ModMenu shows "OBS No More" by TheRealRexo with its description.
+- ModMenu (https://modrinth.com/mod/modmenu-btw) shows "OBS No More" by TheRealRexo with its description.
 - OBS-style editor: menu bar, preview canvas, Scenes / Sources / Audio Mixer /
   Scene Transitions / Controls docks, status bar; select, drag, corner resize
   with anchored opposite corner, Shift free-resize, edge stretch, Alt/Ctrl
