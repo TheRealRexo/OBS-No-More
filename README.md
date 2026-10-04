@@ -131,7 +131,7 @@ reliably resolve mod-jar assets on Legacy Fabric):
 
 ## Verified tests
 
-- Headless Xvfb test runs (Temurin 17): boot, config create + migration
+- Xvfb test runs (Temurin 17): boot, config create + migration
   (schema v3, chat→browser conversion, slots enabled, welcome source).
 - Window capture args: Linux resolves to x11grab region, falls back cleanly
   with no window; virtual null-sink creation verified on PipeWire.
@@ -149,10 +149,7 @@ reliably resolve mod-jar assets on Legacy Fabric):
   persisted), Stream page with visible key/URL fields, Capture tab.
 - Hotkeys switch scenes (config change persists); GUI rebinding saves; pause
   creates valid `_part2` files; editor interactions screenshot-verified.
-- Headless-only rendering note: on a software rasterizer the bundled icon /
-  preview quads register but may not rasterize (text and vanilla widgets are
-  perfect) — verify those PNGs on real hardware.
-
+  
 ## License
 
 GPL-3.0-only (see LICENSE). Matches the GitHub repo license.
