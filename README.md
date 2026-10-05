@@ -49,10 +49,7 @@ checks included.
 
 ## Config (`config/obsnomore.json`)
 
-Auto-created on first launch; v1 `config/stream_overlay.json` is imported
-once automatically (old chat/heart widgets become browser sources when they
-carry a URL, otherwise dropped). Schema migrations (slots, single-RTMP,
-browser conversion) run on load and never touch your choices twice.
+Auto-created on first launch; used to store all settings (and some secret overrides).
 
 ## Editor & setup
 
