@@ -169,5 +169,5 @@ https://legacyfabric.net/usage.html), keeping `loader_version=0.18.4` and
 | 1.9.4–1.13.2 | (version) | latest for it | 1.13.5+(version) |
 
 Also update `fabric.mod.json`'s `minecraft` dependency to match, rebuild,
-and publish one Modrinth file per Minecraft version. The 1.6.4 jar in
+and publish one Modrinth file per Minecraft version. The legacy fabric 1.6.4-1.13.2 jar in
 Releases is the tested reference build.
