@@ -81,7 +81,7 @@ browser conversion) run on load and never touch your choices twice.
 
 ## Target / build
 
-- Minecraft **1.6.4**, yarn `1.6.4+build.604`, loader `0.18.4`,
+- Minecraft **1.6.4-1.13.2**, yarn `1.6.4+build.604`, loader `0.18.4`,
   Legacy Fabric API `1.13.5+1.6.4`, Java 8 bytecode.
 - `loom 1.16-SNAPSHOT` needs **Gradle 9.x** (wrapper pins `gradle-9.8.0`)
   running on **JVM 21+**, compiling with a **JDK 17 toolchain**:
