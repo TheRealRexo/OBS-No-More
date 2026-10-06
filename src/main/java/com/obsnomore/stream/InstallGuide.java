@@ -149,7 +149,12 @@ public final class InstallGuide {
         }
     }
 
-    /** Short Chromium install line (browser-source page rendering). */
+    /** Short Electron install line (browser-source page rendering). */
+    public static String electronInstall() {
+        return "npm install -g electron (needs Node.js, see wiki)";
+    }
+
+    /** Short Chromium install line (fallback page renderer). */
     public static String browserInstall() {
         switch (FFmpeg.os()) {
             case WINDOWS:

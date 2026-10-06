@@ -187,8 +187,9 @@ public final class OverlayRenderer {
         List<String> msgs =
                 WebFetcher.get().getLines(s.url, Math.max(1, Math.min(25, s.max_messages)));
         if (msgs.size() == 1 && hasBrowserUrl(s)
+                && com.obsnomore.stream.Webshotter.locateElectron().isEmpty()
                 && com.obsnomore.stream.Webshotter.locateBrowser().isEmpty()) {
-            String need = "Need Chromium: " + com.obsnomore.stream.InstallGuide.browserInstall();
+            String need = "Need Electron: " + com.obsnomore.stream.InstallGuide.electronInstall();
             need = trimToFit(tr, need, x + 5, w - 10);
             tr.draw(need, x + 5, y + 4, 0xFFFFAA00);
         }
