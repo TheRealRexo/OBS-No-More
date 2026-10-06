@@ -149,25 +149,21 @@ public final class InstallGuide {
         }
     }
 
-    /** Short Electron install line (browser-source page rendering). */
-    public static String electronInstall() {
-        return "npm install -g electron (needs Node.js, see wiki)";
-    }
-
-    /** Short Chromium install line (fallback page renderer). */
+    /** Short headless-Chromium install line (browser-source pages). */
     public static String browserInstall() {
         switch (FFmpeg.os()) {
             case WINDOWS:
-                return "winget install Google.Chrome";
+                return "winget install Eloston.UngoogledChromium";
             case MAC:
-                return "brew install --cask google-chrome";
+                return "brew install --cask chromium";
             default:
                 break;
         }
         switch (linuxDistro()) {
             case ARCH:
-                return "pacman -S chromium";
+                return "pacman -Syu chromium";
             case UBUNTU:
+                return "apt install chromium-browser";
             case DEBIAN:
             case MINT:
                 return "apt install chromium";

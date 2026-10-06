@@ -14,26 +14,26 @@ Add with **+Cam / +Txt / +Img / +Web** in the Sources dock:
 - **Image** — PNG overlay (path in Properties).
 - **Browser** — web pages and text/JSON endpoints: chat overlays,
   widgets, counters, now-playing. Put the URL in Properties. With
-  Electron installed, the page renders as a real screenshot (refreshed
-  every ~15 s, sooner with the info-bar **Reload** button) in the
-  preview and in recordings; without any renderer, text/JSON lines
-  render live instead. (This is the generic replacement for the old
-  built-in chat/heart widgets — plug any feed URL back in if you want
-  one.)
-- Install Electron for rendered pages (needs Node.js first, then the
-  runtime; verify with `electron --version`):
-  - Windows: `winget install OpenJS.NodeJS.LTS`, then
-    `npm install -g electron`
-  - macOS: `brew install node`, then `npm install -g electron`
-  - Arch/CachyOS: `sudo pacman -S --needed nodejs npm`, then
-    `npm install -g electron`
-  - Ubuntu/Debian/Mint: `sudo apt install nodejs npm`, then
-    `npm install -g electron`
-  - Fedora: `sudo dnf install nodejs npm`, then `npm install -g electron`
-  - Bazzite/uBlue: `brew install node`, then `npm install -g electron`
-- Fallback: if Electron is missing but a Chromium browser is installed
-  (Chrome/Edge/`chromium`), the mod uses headless Chromium instead.
-  No install needed beyond the browser itself.
+  headless Chromium installed, the page renders as a real screenshot
+  (refreshed every ~15 s, sooner with the info-bar **Reload** button)
+  in the preview and in recordings; without one, text/JSON lines render
+  live instead. (This is the generic replacement for the old built-in
+  chat/heart widgets — plug any feed URL back in if you want one.)
+  Rendering is software (`--disable-gpu`): identical everywhere, no
+  display or GPU drivers needed.
+- Install headless Chromium for rendered pages (modern Chromium runs
+  headless natively via `--headless` — no special binary needed;
+  Chrome or Edge work too and are auto-detected):
+  - Ubuntu / Debian / Mint:
+    `sudo apt update && sudo apt install -y chromium-browser`
+    (Debian/Mint package is named `chromium`)
+  - Fedora / RHEL / CentOS: `sudo dnf install -y chromium`
+  - Arch / Manjaro / CachyOS: `sudo pacman -Syu chromium`
+  - Windows (PowerShell): `winget install Eloston.UngoogledChromium`
+    (alternatives: `choco install chromium`,
+    `scoop bucket add extras && scoop install chromium`)
+  - macOS: `brew install --cask chromium`
+    (or `brew install chromium` for the no-wrapper binary)
 
 **Properties** (info-bar button, Filters button, or mixer **Props**):
 name, X/Y position, scale, and the content field (text / path / device /

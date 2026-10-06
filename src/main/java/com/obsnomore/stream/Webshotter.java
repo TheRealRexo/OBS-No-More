@@ -9,17 +9,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Renders browser-source URLs to PNGs with Electron (preferred) or a
- * headless Chromium fallback, so web pages (chat overlays, widgets, full
- * HTML) show as real rendered pages instead of scraped text. The PNG feeds
- * the same image pipeline as image sources, in the preview canvas and in
- * 2-POV recordings.
+ * Renders browser-source URLs to PNGs with a headless Chromium, so web
+ * pages (chat overlays, widgets, full HTML) show as real rendered pages
+ * instead of scraped text. The PNG feeds the same image pipeline as image
+ * sources, in the preview canvas and in 2-POV recordings.
  *
- * <p>Needs an Electron runtime on PATH ({@code npm install -g electron},
- * see the wiki for per-OS Node.js steps) or, failing that, a Chromium
- * binary. Without either, browser sources fall back to text-lines mode.
- * Refresh is throttled (~15s) and runs on daemon threads, never on the
- * render thread.
+ * <p>Needs a Chromium binary on PATH (or the standard install location).
+ * Without one, browser sources fall back to text-lines mode. Refresh is
+ * throttled (~15s) and runs on daemon threads, never on the render thread.
  */
 public final class Webshotter {
     private Webshotter() {
@@ -33,151 +30,6 @@ public final class Webshotter {
 
     private static boolean probed;
     private static String browserBin = "";
-    private static boolean electronProbed;
-    private static String electronBin = "";
-    private static boolean scriptReady;
-
-    /** Electron runtime binary path, or "" when none is installed. Cached. */
-    public static synchronized String locateElectron() {
-        if (electronProbed) return electronBin;
-        electronProbed = true;
-        electronBin = probeElectron();
-        try {
-            com.obsnomore.ObsLog.info("webshot electron probe: "
-                    + (electronBin.isEmpty() ? "(none found)" : electronBin));
-        } catch (Throwable ignored) {
-        }
-        return electronBin;
-    }
-
-    private static String probeElectron() {
-        try {
-            String env = System.getenv("OBSNOMORE_ELECTRON");
-            if (env != null && !env.trim().isEmpty()) {
-                File f = new File(env.trim());
-                if (f.isFile()) return f.getAbsolutePath();
-            }
-        } catch (Throwable ignored) {
-        }
-        if (FFmpeg.os() == FFmpeg.Os.WINDOWS) {
-            String w = runWhere("electron.exe");
-            if (w != null) return w;
-        }
-        return firstOnPath("electron");
-    }
-
-    /**
-     * Capture script (offscreen window + capturePage). Written once per
-     * session so updates ship with the mod, not with user config.
-     */
-    static synchronized File electronScript() {
-        File js = new File(FilterGraph.dir(), "webshot.js");
-        if (!scriptReady) {
-            scriptReady = true;
-            try {
-                java.io.FileOutputStream out = null;
-                try {
-                    out = new java.io.FileOutputStream(js);
-                    out.write(WEBSHOT_JS.getBytes("UTF-8"));
-                } finally {
-                    try {
-                        if (out != null) out.close();
-                    } catch (Throwable ignored) {
-                    }
-                }
-            } catch (Throwable ignored) {
-                return null;
-            }
-        }
-        return js.isFile() ? js : null;
-    }
-
-    private static final String WEBSHOT_JS =
-            "// OBSNoMore webshot helper. Regenerated automatically; do not edit.\n"
-            + "var fs = require('fs');\n"
-            + "var n = process.argv.length;\n"
-            + "var url = process.argv[n - 4];\n"
-            + "var out = process.argv[n - 3];\n"
-            + "var vw = parseInt(process.argv[n - 2], 10) || 960;\n"
-            + "var vh = parseInt(process.argv[n - 1], 10) || 540;\n"
-            + "var electron = require('electron');\n"
-            + "var finished = false;\n"
-            + "function done(c) {\n"
-            + "  if (finished) return;\n"
-            + "  finished = true;\n"
-            + "  try { electron.app.exit(c); } catch (e) { process.exit(c); }\n"
-            + "}\n"
-            + "function shoot(win) {\n"
-            + "  try {\n"
-            + "    win.webContents.capturePage().then(function (img) {\n"
-            + "      try { fs.writeFileSync(out, img.toPNG()); }\n"
-            + "      catch (e) { done(5); return; }\n"
-            + "      done(0);\n"
-            + "    }).catch(function () { done(6); });\n"
-            + "  } catch (e) { done(7); }\n"
-            + "}\n"
-            + "electron.app.whenReady().then(function () {\n"
-            + "  var win = null;\n"
-            + "  try {\n"
-            + "    win = new electron.BrowserWindow({ width: vw, height: vh,\n"
-            + "      show: false, webPreferences: { offscreen: true } });\n"
-            + "  } catch (e) { done(4); return; }\n"
-            + "  try {\n"
-            + "    win.webContents.on('did-finish-load', function () {\n"
-            + "      setTimeout(function () { shoot(win); }, 4000);\n"
-            + "    });\n"
-            + "  } catch (e) {}\n"
-            + "  try { win.loadURL(url); } catch (e) { done(9); return; }\n"
-            + "  setTimeout(function () { shoot(win); }, 12000);\n"
-            + "  setTimeout(function () { shoot(win); }, 45000);\n"
-            + "});\n"
-            + "setTimeout(function () { done(8); }, 60000);\n";
-
-    /**
-     * Electron capture command, or null when unusable. The sandbox flags
-     * must be process args (not in-script switches): the zygote reads them
-     * before the script runs, and without them rendering never paints.
-     */
-    static List<String> electronCmd(String url, File tmpPng) {
-        String eng = locateElectron();
-        if (eng.isEmpty()) return null;
-        File js = electronScript();
-        if (js == null) return null;
-        List<String> cmd = new ArrayList<String>();
-        cmd.add(eng);
-        cmd.add("--no-sandbox");
-        cmd.add("--disable-setuid-sandbox");
-        cmd.add("--disable-gpu");
-        cmd.add("--disable-dev-shm-usage");
-        cmd.add(js.getAbsolutePath());
-        cmd.add(url);
-        cmd.add(tmpPng.getAbsolutePath());
-        cmd.add(String.valueOf(SHOT_W));
-        cmd.add(String.valueOf(SHOT_H));
-        return cmd;
-    }
-
-    /** Headless-Chromium fallback command (used only without Electron). */
-    static List<String> chromeCmd(String url, File tmpPng) {
-        String bin = locateBrowser();
-        if (bin.isEmpty()) return null;
-        List<String> cmd = new ArrayList<String>();
-        cmd.add(bin);
-        cmd.add("--headless");
-        cmd.add("--disable-gpu");
-        cmd.add("--no-sandbox");
-        cmd.add("--hide-scrollbars");
-        // Let JS widgets/feeds finish loading before the shot:
-        // without this the capture is a blank white page.
-        // 15s budget: network-fed widgets (heart-rate, chat)
-        // often need several seconds after DOM load.
-        cmd.add("--virtual-time-budget=15000");
-        cmd.add("--run-all-compositor-stages-before-draw");
-        cmd.add("--window-size=" + SHOT_W + "," + SHOT_H);
-        cmd.add("--screenshot=" + tmpPng.getAbsolutePath());
-        cmd.add(url);
-        return cmd;
-    }
 
     private static final class Shot {
         File file;
@@ -200,6 +52,13 @@ public final class Webshotter {
         try {
             com.obsnomore.ObsLog.info("webshot browser probe: "
                     + (browserBin.isEmpty() ? "(none found)" : browserBin));
+        } catch (Throwable ignored) {
+        }
+        // Leftover from the retired Electron engine (1.0.0 dev builds):
+        // the generated helper script is no longer used.
+        try {
+            File stale = new File(FilterGraph.dir(), "webshot.js");
+            if (stale.isFile()) stale.delete();
         } catch (Throwable ignored) {
         }
         return browserBin;
@@ -240,7 +99,8 @@ public final class Webshotter {
             }
             default:
                 return firstOnPath("chromium", "chromium-browser",
-                        "google-chrome", "google-chrome-stable", "microsoft-edge");
+                        "ungoogled-chromium", "google-chrome",
+                        "google-chrome-stable", "microsoft-edge");
         }
     }
 
@@ -356,7 +216,7 @@ public final class Webshotter {
         final String url = s.url.trim();
         if (!url.startsWith("http://") && !url.startsWith("https://")
                 && !url.startsWith("file://")) return;
-        if (locateElectron().isEmpty() && locateBrowser().isEmpty()) return;
+        if (locateBrowser().isEmpty()) return;
         synchronized (SHOTS) {
             Shot e = SHOTS.get(url);
             if (e == null) {
@@ -378,9 +238,7 @@ public final class Webshotter {
         final String url = s.url.trim();
         if (!url.startsWith("http://") && !url.startsWith("https://")
                 && !url.startsWith("file://")) return;
-        // Electron first, headless Chromium as fallback.
-        final boolean useElectron = !locateElectron().isEmpty();
-        if (!useElectron && locateBrowser().isEmpty()) return;
+        if (locateBrowser().isEmpty()) return;
         final String key = url;
         boolean stale;
         synchronized (SHOTS) {
@@ -402,26 +260,25 @@ public final class Webshotter {
                     // Note: .png suffix required, headless chrome validates
                     // the screenshot file type by extension.
                     File tmp = new File(out.getAbsolutePath() + ".new.png");
-                    List<String> cmd = useElectron ? electronCmd(url, tmp)
-                            : chromeCmd(url, tmp);
-                    if (cmd == null) {
-                        com.obsnomore.ObsLog.info("webshot no engine for: " + url);
-                        synchronized (SHOTS) {
-                            Shot e = SHOTS.get(key);
-                            if (e != null) e.inFlight = false;
-                        }
-                        return;
-                    }
-                    try {
-                        com.obsnomore.ObsLog.info("webshot capture ("
-                                + (useElectron ? "electron" : "chrome") + "): " + url);
-                    } catch (Throwable ignored) {
-                    }
+                    List<String> cmd = new ArrayList<String>();
+                    cmd.add(locateBrowser());
+                    cmd.add("--headless");
+                    cmd.add("--disable-gpu");
+                    cmd.add("--no-sandbox");
+                    cmd.add("--hide-scrollbars");
+                    // Let JS widgets/feeds finish loading before the shot:
+                    // without this the capture is a blank white page.
+                    // 15s budget: network-fed widgets (heart-rate, chat)
+                    // often need several seconds after DOM load.
+                    cmd.add("--virtual-time-budget=15000");
+                    cmd.add("--run-all-compositor-stages-before-draw");
+                    cmd.add("--window-size=" + SHOT_W + "," + SHOT_H);
+                    cmd.add("--screenshot=" + tmp.getAbsolutePath());
+                    cmd.add(url);
                     Process p = new ProcessBuilder(cmd).start();
                     boolean done = false;
                     try {
-                        done = p.waitFor(useElectron ? 70 : 40,
-                                java.util.concurrent.TimeUnit.SECONDS);
+                        done = p.waitFor(40, java.util.concurrent.TimeUnit.SECONDS);
                     } catch (InterruptedException ignored) {
                     }
                     int exit = done ? p.exitValue() : -1;
@@ -438,8 +295,7 @@ public final class Webshotter {
                             Shot e = SHOTS.get(key);
                             // A truly solid-color page would look blank
                             // forever: accept it after a few tries instead
-                            // of re-spawning the renderer every 3s
-                            // indefinitely.
+                            // of re-spawning chrome every 3s indefinitely.
                             if (e != null) {
                                 if (blank) e.blanks++;
                                 else e.blanks = 0;
