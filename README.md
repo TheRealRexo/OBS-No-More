@@ -46,11 +46,11 @@ checks included.
   (Linux: johnvansickle.com full static · Windows: gyan.dev full ·
   macOS: evermeet.cx / brew). Audio devices are per-OS too
   (PulseAudio/PipeWire, dshow/WASAPI, avfoundation).
-- **Browser sources**: rendered pages need headless Chromium
-  (per-OS install commands in the wiki; Google Chrome or Edge also work).
-  Rendering is software (`--disable-gpu`), so it works with no display
-  or GPU drivers. Without a browser, sources show live text/JSON lines
-  instead.
+- **Browser sources**: rendered pages need headless Chromium or
+  Electron (per-OS install commands in the wiki; pick the engine on the
+  Setup ffmpeg page). Rendering is software (`--disable-gpu`), so it
+  works with no display or GPU drivers. Without a renderer, sources
+  show live text/JSON lines instead.
 
 ## Config (`config/obsnomore.json`)
 

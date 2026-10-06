@@ -47,6 +47,9 @@ public class StreamSettingsScreen extends Screen {
     private TextFieldWidget capHField;
     private TextFieldWidget capTitleField;
 
+    private List<com.obsnomore.stream.DepCheck.Row> depRows =
+            new ArrayList<com.obsnomore.stream.DepCheck.Row>();
+
     private static final Map<Integer, RtmpTester.Result> TEST_RESULTS =
             new HashMap<Integer, RtmpTester.Result>();
     private static final Map<Integer, String> TEST_STATUS = new HashMap<Integer, String>();
@@ -213,7 +216,22 @@ public class StreamSettingsScreen extends Screen {
             y += 24;
             buttons.add(new ButtonWidget(180, 10, y, 150, 20, "Scan drives"));
             buttons.add(new ButtonWidget(181, 165, y, 155, 20, "Use system PATH"));
+            y += 24;
+            buttons.add(new ButtonWidget(183, 10, y, 150, 20, "Rescan all"));
+            buttons.add(new ButtonWidget(184, 165, y, 155, 20,
+                    "Pages: " + pageRendererLabel()));
+            depRows = com.obsnomore.stream.DepCheck.scan();
         }
+    }
+
+    private String pageRendererLabel() {
+        try {
+            String m = com.obsnomore.stream.Webshotter.rendererMode();
+            if (m.equals("chromium")) return "Chromium";
+            if (m.equals("electron")) return "Electron";
+        } catch (Throwable ignored) {
+        }
+        return "Auto";
     }
 
     private TextFieldWidget capField(String v, int x, int y) {
@@ -595,6 +613,31 @@ public class StreamSettingsScreen extends Screen {
                 scanStatus = "cleared: will use system PATH";
                 queueRefresh();
                 break;
+            case 183:
+                pushFields();
+                cfg.save();
+                com.obsnomore.stream.Webshotter.reprobe();
+                depRows = com.obsnomore.stream.DepCheck.scan();
+                scanStatus = "rescanned all dependencies";
+                queueRefresh();
+                break;
+            case 184: {
+                pushFields();
+                String m = "auto";
+                try {
+                    if (cfg.browser == null) cfg.browser = new OverlayConfig.Browser();
+                    m = cfg.browser.renderer == null ? "auto" : cfg.browser.renderer;
+                    if (m.equals("auto")) m = "chromium";
+                    else if (m.equals("chromium")) m = "electron";
+                    else m = "auto";
+                    cfg.browser.renderer = m;
+                } catch (Throwable ignored) {
+                }
+                cfg.save();
+                scanStatus = "page renderer: " + m;
+                queueRefresh();
+                break;
+            }
             case 182:
                 pushFields();
                 cfg.save();
@@ -685,17 +728,23 @@ public class StreamSettingsScreen extends Screen {
             textRenderer.draw("macOS uses screen index + crop; keep w/h = game size.", 10, y + 135, 0xFF777777);
         } else {
             textRenderer.draw("ffmpeg binary path (blank = auto):", 10, y - 8, 0xFFAAAAAA);
-            textRenderer.draw("Download for your OS:", 10, y + 48, 0xFFFFFFFF);
-            textRenderer.draw(FFmpeg.downloadLink(), 10, y + 58, 0xFF55FFFF);
-            textRenderer.draw("Found now: " + shortFound(), 10, y + 70, 0xFFAAAAAA);
-            if (!scanStatus.isEmpty()) textRenderer.draw(scanStatus, 10, y + 82, 0xFF55FF55);
+            textRenderer.draw("Dependencies (green = found, red = missing):", 10, y + 72,
+                    0xFFFFFFFF);
+            int dry = y + 84;
+            for (int i = 0; i < depRows.size() && i < 5; i++) {
+                com.obsnomore.stream.DepCheck.Row r = depRows.get(i);
+                if (r == null) continue;
+                String line = r.name + ": " + (r.detail == null ? "" : r.detail);
+                int maxW = width - 20;
+                if (textRenderer.getStringWidth(line) > maxW) {
+                    line = textRenderer.trimToWidth(line, maxW);
+                }
+                int col = r.na ? 0xFF777777 : (r.ok ? 0xFF55FF55 : 0xFFFF5555);
+                textRenderer.draw(line, 10, dry, col);
+                dry += 10;
+            }
+            if (!scanStatus.isEmpty()) textRenderer.draw(scanStatus, 10, dry + 2, 0xFF55FFFF);
         }
-    }
-
-    private String shortFound() {
-        String f = FFmpeg.locate();
-        if (f == null || f.isEmpty()) return "(none - recording/streaming disabled)";
-        return f.length() > 52 ? "..." + f.substring(f.length() - 52) : f;
     }
 
     @Override

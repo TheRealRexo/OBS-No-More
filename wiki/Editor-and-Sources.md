@@ -21,9 +21,17 @@ Add with **+Cam / +Txt / +Img / +Web** in the Sources dock:
   chat/heart widgets — plug any feed URL back in if you want one.)
   Rendering is software (`--disable-gpu`): identical everywhere, no
   display or GPU drivers needed.
-- Install headless Chromium for rendered pages (modern Chromium runs
-  headless natively via `--headless` — no special binary needed;
-  Chrome or Edge work too and are auto-detected):
+- Install a renderer for rendered pages (pick the engine on the Setup
+  ffmpeg page — **Pages**: Auto / Chromium / Electron):
+  - Electron (`npm install -g electron` after installing Node.js;
+    verify with `electron --version`):
+    - Windows: `winget install OpenJS.NodeJS.LTS`, then npm command
+    - macOS: `brew install node`, then npm command
+    - Arch/CachyOS: `sudo pacman -S --needed nodejs npm`, then npm command
+    - Ubuntu/Debian/Mint: `sudo apt install nodejs npm`, then npm command
+    - Fedora: `sudo dnf install nodejs npm`, then npm command
+    - Bazzite/uBlue: `brew install node`, then npm command
+  - Headless Chromium (fallback; Chrome or Edge work too):
   - Ubuntu / Debian / Mint:
     `sudo apt update && sudo apt install -y chromium-browser`
     (Debian/Mint package is named `chromium`)
@@ -42,6 +50,12 @@ small field under the menu bar (Enter saves).
 
 **Reload** (info bar): re-captures the selected browser source's page
 immediately instead of waiting for the ~15 s auto-refresh.
+
+**Setup ffmpeg page doubles as Dependencies**: green = found with its
+path, red = missing with the install command. **Rescan all** re-detects
+everything (use it right after installing something), and **Pages**
+cycles the page renderer: **Auto** (Electron first, Chromium fallback),
+**Chromium**, or **Electron**.
 
 ## Transforms (canvas)
 

@@ -46,6 +46,7 @@ public class OverlayConfig {
     public List<Scene> scenes = new ArrayList<Scene>();
     public Streaming streaming = new Streaming();
     public Recording recording = new Recording();
+    public Browser browser = new Browser();
     public String ffmpeg_path = "";
     /** First-run wizard completed. */
     public boolean setup_done = false;
@@ -140,6 +141,12 @@ public class OverlayConfig {
         public String container = "mp4";
         public String encoder = "libx264";
         public String quality = "1080p30";
+    }
+
+    /** Browser-source page renderer choice. */
+    public static class Browser {
+        /** auto | chromium | electron (auto prefers Electron, falls back) */
+        public String renderer = "auto";
     }
 
     /** Window-capture source (the Minecraft window region). */
@@ -245,6 +252,11 @@ public class OverlayConfig {
             scenes.add(main);
         }
         if (streaming == null) streaming = new Streaming();
+        if (browser == null) browser = new Browser();
+        if (browser.renderer == null || (!browser.renderer.equals("chromium")
+                && !browser.renderer.equals("electron"))) {
+            browser.renderer = "auto";
+        }
         if (capture == null) capture = new Capture();
         if (capture.mode == null
                 || (!capture.mode.equals("window") && !capture.mode.equals("region"))) {

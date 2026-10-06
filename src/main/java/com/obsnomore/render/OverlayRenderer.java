@@ -187,8 +187,9 @@ public final class OverlayRenderer {
         List<String> msgs =
                 WebFetcher.get().getLines(s.url, Math.max(1, Math.min(25, s.max_messages)));
         if (msgs.size() == 1 && hasBrowserUrl(s)
-                && com.obsnomore.stream.Webshotter.locateBrowser().isEmpty()) {
-            String need = "Need Chromium: " + com.obsnomore.stream.InstallGuide.browserInstall();
+                && noRendererForChoice()) {
+            String need = "Need " + needRendererName() + ": "
+                    + needRendererInstall();
             need = trimToFit(tr, need, x + 5, w - 10);
             tr.draw(need, x + 5, y + 4, 0xFFFFAA00);
         }
@@ -208,6 +209,43 @@ public final class OverlayRenderer {
         if (s == null || s.url == null) return false;
         String u = s.url.trim();
         return u.startsWith("http://") || u.startsWith("https://") || u.startsWith("file://");
+    }
+
+    /** True when the configured page renderer is missing entirely. */
+    private static boolean noRendererForChoice() {
+        try {
+            String mode = com.obsnomore.stream.Webshotter.rendererMode();
+            if (mode.equals("electron")) {
+                return com.obsnomore.stream.Webshotter.locateElectron().isEmpty();
+            }
+            if (mode.equals("chromium")) {
+                return com.obsnomore.stream.Webshotter.locateBrowser().isEmpty();
+            }
+            return com.obsnomore.stream.Webshotter.locateElectron().isEmpty()
+                    && com.obsnomore.stream.Webshotter.locateBrowser().isEmpty();
+        } catch (Throwable t) {
+            return true;
+        }
+    }
+
+    private static String needRendererName() {
+        try {
+            if (com.obsnomore.stream.Webshotter.rendererMode().equals("chromium")) {
+                return "Chromium";
+            }
+        } catch (Throwable ignored) {
+        }
+        return "Electron";
+    }
+
+    private static String needRendererInstall() {
+        try {
+            if (com.obsnomore.stream.Webshotter.rendererMode().equals("chromium")) {
+                return com.obsnomore.stream.InstallGuide.browserInstall();
+            }
+        } catch (Throwable ignored) {
+        }
+        return com.obsnomore.stream.InstallGuide.electronInstall();
     }
 
     public static void renderText(MinecraftClient client, OverlayConfig.Source s) {
