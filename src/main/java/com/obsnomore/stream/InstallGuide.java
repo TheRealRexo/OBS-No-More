@@ -160,7 +160,10 @@ public final class InstallGuide {
             case WINDOWS:
                 return "winget install Eloston.UngoogledChromium";
             case MAC:
-                return "brew install --cask chromium";
+                // NOTE: `brew install --cask chromium` is disabled upstream
+                // (fails macOS Gatekeeper; disabled 2026-09-01) — Chrome is
+                // the working macOS route and is auto-detected.
+                return "brew install --cask google-chrome";
             default:
                 break;
         }

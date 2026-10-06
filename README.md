@@ -48,7 +48,7 @@ checks included.
   (PulseAudio/PipeWire, dshow/WASAPI, avfoundation).
 - **Browser sources**: rendered pages need headless Chromium or
   Electron (per-OS install commands in the wiki; pick the engine on the
-  Setup ffmpeg page). Rendering is software (`--disable-gpu`), so it
+  Setup Deps page). Rendering is software (`--disable-gpu`), so it
   works with no display or GPU drivers. Without a renderer, sources
   show live text/JSON lines instead.
 

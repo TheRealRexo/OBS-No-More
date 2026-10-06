@@ -48,6 +48,10 @@ public class OverlayConfig {
     public Recording recording = new Recording();
     public Browser browser = new Browser();
     public String ffmpeg_path = "";
+    /** Manual Chromium override (blank = auto-detect). Set in Setup Deps. */
+    public String chromium_path = "";
+    /** Manual Electron override (blank = auto-detect). Set in Setup Deps. */
+    public String electron_path = "";
     /** First-run wizard completed. */
     public boolean setup_done = false;
     /**

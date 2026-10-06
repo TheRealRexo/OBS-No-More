@@ -13,8 +13,9 @@ Add with **+Cam / +Txt / +Img / +Web** in the Sources dock:
 - **Text** — static label.
 - **Image** — PNG overlay (path in Properties).
 - **Browser** — web pages and text/JSON endpoints: chat overlays,
-  widgets, counters, now-playing. Put the URL in Properties. With
-  headless Chromium installed, the page renders as a real screenshot
+  widgets, counters, now-playing. Put the URL in Properties. With a
+  renderer installed (Chromium or Electron — pick on the Setup Deps
+  page), the page renders as a real screenshot
   (refreshed every ~15 s, sooner with the info-bar **Reload** button)
   in the preview and in recordings; without one, text/JSON lines render
   live instead. (This is the generic replacement for the old built-in
@@ -22,7 +23,7 @@ Add with **+Cam / +Txt / +Img / +Web** in the Sources dock:
   Rendering is software (`--disable-gpu`): identical everywhere, no
   display or GPU drivers needed.
 - Install a renderer for rendered pages (pick the engine on the Setup
-  ffmpeg page — **Pages**: Auto / Chromium / Electron):
+  Deps page — **Pages**: Auto / Chromium / Electron):
   - Electron (`npm install -g electron` after installing Node.js;
     verify with `electron --version`):
     - Windows: `winget install OpenJS.NodeJS.LTS`, then npm command
@@ -40,8 +41,17 @@ Add with **+Cam / +Txt / +Img / +Web** in the Sources dock:
   - Windows (PowerShell): `winget install Eloston.UngoogledChromium`
     (alternatives: `choco install chromium`,
     `scoop bucket add extras && scoop install chromium`)
-  - macOS: `brew install --cask chromium`
-    (or `brew install chromium` for the no-wrapper binary)
+  - macOS: install **Google Chrome** (`brew install --cask google-chrome`)
+    — it is auto-detected and is currently the working macOS route:
+    `brew install --cask chromium` is **disabled upstream** (fails with
+    `Cask 'chromium' has been disabled because it does not pass the macOS
+    Gatekeeper check!`, disabled 2026-09-01). Microsoft Edge from the Mac
+    App Store works too.
+- **Manual paths**: if auto-detect misses your install, type the full
+  binary path into **Chromium path** / **Electron path** on the Setup
+  Deps page (tall screens only — otherwise set `chromium_path` /
+  `electron_path` by hand in `config/obsnomore.json`), then **Rescan
+  all** and watch the row flip green with your path.
 
 **Properties** (info-bar button, Filters button, or mixer **Props**):
 name, X/Y position, scale, and the content field (text / path / device /
@@ -51,7 +61,7 @@ small field under the menu bar (Enter saves).
 **Reload** (info bar): re-captures the selected browser source's page
 immediately instead of waiting for the ~15 s auto-refresh.
 
-**Setup ffmpeg page doubles as Dependencies**: green = found with its
+**Setup Deps page (formerly ffmpeg)**: green = found with its
 path, red = missing with the install command. **Rescan all** re-detects
 everything (use it right after installing something), and **Pages**
 cycles the page renderer: **Auto** (Electron first, Chromium fallback),

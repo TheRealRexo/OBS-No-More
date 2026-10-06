@@ -77,6 +77,16 @@ public final class Webshotter {
     }
 
     private static String probeElectron() {
+        // Manual path from Setup Deps wins, then env override.
+        try {
+            OverlayConfig cfg = OverlayConfig.get();
+            if (cfg != null && cfg.electron_path != null
+                    && !cfg.electron_path.trim().isEmpty()) {
+                File f = new File(cfg.electron_path.trim());
+                if (f.isFile()) return f.getAbsolutePath();
+            }
+        } catch (Throwable ignored) {
+        }
         try {
             String env = System.getenv("OBSNOMORE_ELECTRON");
             if (env != null && !env.trim().isEmpty()) {
@@ -218,7 +228,7 @@ public final class Webshotter {
     /** Retry delay after a blank capture (a good shot may just need JS time). */
     public static final long BLANK_RETRY_MS = 3000L;
 
-    /** Chromium-family binary path, or "" when none is installed. Cached. */
+    /** Chromium-family binary path: manual override, else auto-detect. Cached. */
     public static synchronized String locateBrowser() {
         if (probed) return browserBin;
         probed = true;
@@ -239,6 +249,16 @@ public final class Webshotter {
     }
 
     private static String probe() {
+        // Manual path from Setup Deps wins over everything.
+        try {
+            OverlayConfig cfg = OverlayConfig.get();
+            if (cfg != null && cfg.chromium_path != null
+                    && !cfg.chromium_path.trim().isEmpty()) {
+                File f = new File(cfg.chromium_path.trim());
+                if (f.isFile()) return f.getAbsolutePath();
+            }
+        } catch (Throwable ignored) {
+        }
         switch (FFmpeg.os()) {
             case WINDOWS: {
                 String w = runWhere("chrome.exe");

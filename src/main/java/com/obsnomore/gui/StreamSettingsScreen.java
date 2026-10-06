@@ -24,7 +24,7 @@ public class StreamSettingsScreen extends Screen {
     private boolean refreshQueued = false;
     private int page;
 
-    private static final String[] PAGES = {"Stream", "Record", "Audio", "Keys", "ffmpeg", "Capture"};
+    private static final String[] PAGES = {"Stream", "Record", "Audio", "Keys", "Deps", "Capture"};
 
     private final List<TextFieldWidget> fields = new ArrayList<TextFieldWidget>();
     private TextFieldWidget keyField0;
@@ -40,6 +40,8 @@ public class StreamSettingsScreen extends Screen {
     private TextFieldWidget micField;
     private TextFieldWidget desktopField;
     private TextFieldWidget ffmpegField;
+    private TextFieldWidget chromiumField;
+    private TextFieldWidget electronField;
     private TextFieldWidget capDisplayField;
     private TextFieldWidget capXField;
     private TextFieldWidget capYField;
@@ -77,6 +79,7 @@ public class StreamSettingsScreen extends Screen {
         slotUrlIdx.clear();
         customUrlField = bitrateField = recPathField = null;
         micField = desktopField = ffmpegField = null;
+        chromiumField = electronField = null;
         capDisplayField = capXField = capYField = null;
         capWField = capHField = capTitleField = null;
 
@@ -221,6 +224,25 @@ public class StreamSettingsScreen extends Screen {
             buttons.add(new ButtonWidget(184, 165, y, 155, 20,
                     "Pages: " + pageRendererLabel()));
             depRows = com.obsnomore.stream.DepCheck.scan();
+            // Manual renderer paths (only when the screen is tall enough
+            // to fit them clear of the Done button; auto-detect otherwise,
+            // or set them by hand in the config file).
+            chromiumField = null;
+            electronField = null;
+            if (height >= 300) {
+                y += 108;
+                TextFieldWidget cf = new TextFieldWidget(textRenderer, 10, y, 310, 20);
+                cf.setMaxLength(512);
+                cf.setText(cfg.chromium_path == null ? "" : cfg.chromium_path);
+                fields.add(cf);
+                chromiumField = cf;
+                y += 32;
+                TextFieldWidget ef = new TextFieldWidget(textRenderer, 10, y, 310, 20);
+                ef.setMaxLength(512);
+                ef.setText(cfg.electron_path == null ? "" : cfg.electron_path);
+                fields.add(ef);
+                electronField = ef;
+            }
         }
     }
 
@@ -325,6 +347,8 @@ public class StreamSettingsScreen extends Screen {
             if (micField != null) cfg.streaming.mic.device = micField.getText().trim();
             if (desktopField != null) cfg.streaming.desktop.device = desktopField.getText().trim();
             if (ffmpegField != null) cfg.ffmpeg_path = ffmpegField.getText().trim();
+            if (chromiumField != null) cfg.chromium_path = chromiumField.getText().trim();
+            if (electronField != null) cfg.electron_path = electronField.getText().trim();
             if (capDisplayField != null) {
                 cfg.capture.display = capDisplayField.getText().trim();
             }
@@ -744,6 +768,10 @@ public class StreamSettingsScreen extends Screen {
                 dry += 10;
             }
             if (!scanStatus.isEmpty()) textRenderer.draw(scanStatus, 10, dry + 2, 0xFF55FFFF);
+            if (height >= 300) {
+                textRenderer.draw("Chromium path (blank = auto):", 10, y + 148, 0xFFAAAAAA);
+                textRenderer.draw("Electron path (blank = auto):", 10, y + 180, 0xFFAAAAAA);
+            }
         }
     }
 
