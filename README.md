@@ -46,8 +46,9 @@ checks included.
   (Linux: johnvansickle.com full static · Windows: gyan.dev full ·
   macOS: evermeet.cx / brew). Audio devices are per-OS too
   (PulseAudio/PipeWire, dshow/WASAPI, avfoundation).
-- **Browser sources**: rendered pages need headless Chromium or
-  Electron (per-OS install commands in the wiki; pick the engine on the
+- **Browser sources**: rendered pages need Electron or any
+  Chromium-based browser (Chrome, Edge, Brave, Vivaldi, Opera… —
+  per-OS install commands in the wiki; pick the engine on the
   Setup Deps page). Rendering is software (`--disable-gpu`), so it
   works with no display or GPU drivers. Without a renderer, sources
   show live text/JSON lines instead.

@@ -32,7 +32,8 @@ Add with **+Cam / +Txt / +Img / +Web** in the Sources dock:
     - Ubuntu/Debian/Mint: `sudo apt install nodejs npm`, then npm command
     - Fedora: `sudo dnf install nodejs npm`, then npm command
     - Bazzite/uBlue: `brew install node`, then npm command
-  - Headless Chromium (fallback; Chrome or Edge work too):
+  - Headless Chromium (fallback; any Chromium-based browser works —
+    Chrome, Edge, Brave, Vivaldi, Opera — all auto-detected):
   - Ubuntu / Debian / Mint:
     `sudo apt update && sudo apt install -y chromium-browser`
     (Debian/Mint package is named `chromium`)

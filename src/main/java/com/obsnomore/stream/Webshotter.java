@@ -261,14 +261,25 @@ public final class Webshotter {
         }
         switch (FFmpeg.os()) {
             case WINDOWS: {
+                // Any Chromium-based browser works for headless screenshots.
                 String w = runWhere("chrome.exe");
                 if (w != null) return w;
                 w = runWhere("msedge.exe");
+                if (w != null) return w;
+                w = runWhere("brave.exe");
+                if (w != null) return w;
+                w = runWhere("vivaldi.exe");
+                if (w != null) return w;
+                w = runWhere("opera.exe");
                 if (w != null) return w;
                 String[] paths = {
                     "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
                     "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
                     "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+                    "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+                    "C:\\Program Files (x86)\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+                    "C:\\Program Files\\Vivaldi\\Application\\vivaldi.exe",
+                    "C:\\Program Files\\Opera\\opera.exe",
                 };
                 for (String p : paths) {
                     try {
@@ -282,6 +293,10 @@ public final class Webshotter {
                 String[] paths = {
                     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
                     "/Applications/Chromium.app/Contents/MacOS/Chromium",
+                    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+                    "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+                    "/Applications/Vivaldi.app/Contents/MacOS/Vivaldi",
+                    "/Applications/Opera.app/Contents/MacOS/Opera",
                 };
                 for (String p : paths) {
                     try {
@@ -294,7 +309,9 @@ public final class Webshotter {
             default:
                 return firstOnPath("chromium", "chromium-browser",
                         "ungoogled-chromium", "google-chrome",
-                        "google-chrome-stable", "microsoft-edge");
+                        "google-chrome-stable", "brave-browser", "brave",
+                        "vivaldi", "vivaldi-stable", "opera",
+                        "microsoft-edge", "microsoft-edge-stable");
         }
     }
 
